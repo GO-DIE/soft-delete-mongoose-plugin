@@ -1,0 +1,9 @@
+root = true # 配置规则有效范围：在root 键设置为true的 EditorConfig 文件或到达根文件系统目录。
+
+[*] # 对所有所有文件应用以下配置
+end_of_line = lf # 换行符：unix风格的换行符
+charset = utf-8 # 文件编码格式：utf-8
+trim_trailing_whitespace = true # 是否删除文件中换行符之前的存在空白字符：是
+insert_final_newline = true # 设置文件在保存时以换行符结尾：是
+indent_style = space # 缩进风格：space
+indent_size = 2 # 缩进大小（单位对应indent_style）：2 space

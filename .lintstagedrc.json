@@ -1,4 +1,4 @@
 {
-  "*.ts": ["npm run lint --"],
-  "*.{ts,json,yaml}": ["npm run format --"]
+  "*.ts": ["eslint --fix"],
+  "*.{ts,json,yaml}": ["prettier --write"]
 }

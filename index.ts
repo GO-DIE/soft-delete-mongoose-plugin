@@ -41,28 +41,28 @@ export interface SoftDeletedModel<
     callback?: Callback,
   ): QueryWithHelpers<UpdateWriteOpResult, ResultDoc, TQueryHelpers, T>;
 
-  findByIdAndDelete<
+  findByIdAndSoftDelete<
     ResultDoc = HydratedDocument<T, TMethodsAndOverrides, TVirtuals>,
   >(
     id: Types.ObjectId | any,
     options: QueryOptions & { rawResult: true },
     callback?: (err: CallbackError, doc: any, res: any) => void,
   ): QueryWithHelpers<ModifyResult<ResultDoc>, ResultDoc, TQueryHelpers, T>;
-  findByIdAndDelete<
+  findByIdAndSoftDelete<
     ResultDoc = HydratedDocument<T, TMethodsAndOverrides, TVirtuals>,
   >(
     id: Types.ObjectId | any,
     options: QueryOptions & { upsert: true } & ReturnsNewDoc,
     callback?: (err: CallbackError, doc: ResultDoc, res: any) => void,
   ): QueryWithHelpers<ResultDoc, ResultDoc, TQueryHelpers, T>;
-  findByIdAndDelete<
+  findByIdAndSoftDelete<
     ResultDoc = HydratedDocument<T, TMethodsAndOverrides, TVirtuals>,
   >(
     id?: Types.ObjectId | any,
     options?: QueryOptions | null,
     callback?: (err: CallbackError, doc: ResultDoc | null, res: any) => void,
   ): QueryWithHelpers<ResultDoc | null, ResultDoc, TQueryHelpers, T>;
-  findByIdAndDelete<
+  findByIdAndSoftDelete<
     ResultDoc = HydratedDocument<T, TMethodsAndOverrides, TVirtuals>,
   >(
     id: Types.ObjectId | any,
@@ -113,7 +113,7 @@ type OverriddenMethod = typeof overriddenMethods[number];
 type OverrideOption = Record<OverriddenMethod, boolean>;
 
 export class SoftDeleted {
-  private mongoDBVersion: string;
+  private mongoDBVersion: string | undefined;
   private softDeletedField: string;
   private overrideOptions: OverrideOption | undefined;
   private nonDeletedFilterOptions: Record<string, null>;
@@ -121,15 +121,19 @@ export class SoftDeleted {
   private nonDeletedPipelineMatchOptions: PipelineStage.Match;
 
   constructor(
-    mongoDBVersion: string,
     softDeletedField: string,
-    overrideOptions?: OverrideOption,
+    options: { mongoDBVersion?: string; override?: OverrideOption } = {},
   ) {
+    const { mongoDBVersion, override } = options;
     this.mongoDBVersion = mongoDBVersion;
     this.softDeletedField = softDeletedField;
-    this.overrideOptions = overrideOptions;
+    this.overrideOptions = override;
     this.nonDeletedFilterOptions = { [this.softDeletedField]: null };
-    this.deleteUpdateOptions = { [this.softDeletedField]: new Date() };
+    this.deleteUpdateOptions = {
+      get [this.softDeletedField]() {
+        return new Date();
+      },
+    };
     this.nonDeletedPipelineMatchOptions = {
       $match: this.nonDeletedFilterOptions,
     };
@@ -147,7 +151,7 @@ export class SoftDeleted {
     return object.$lookup ? true : false;
   }
 
-  plugin() {
+  getPlugin() {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const softDeleted = this;
     return (schema: Schema) => {
@@ -173,7 +177,10 @@ export class SoftDeleted {
       });
 
       overriddenMethods.forEach(overriddenMethod => {
-        if (!softDeleted.overrideOptions?.[overriddenMethod]) {
+        if (
+          softDeleted.overrideOptions &&
+          !softDeleted.overrideOptions[overriddenMethod]
+        ) {
           return;
         }
         schema.statics[overriddenMethod] = async function (
@@ -203,36 +210,41 @@ export class SoftDeleted {
                     softDeleted.nonDeletedPipelineMatchOptions,
                   );
                 } else {
-                  if (softDeleted.mongoDBVersion < '3.6') {
-                    throw new Error(
-                      'Mongodb server version smaller than 3.6 does not support aggregate lookup pipeline overrides',
-                    );
-                  }
-
-                  if (softDeleted.mongoDBVersion < '5') {
-                    const letField = 'localField';
-                    pipeline.$lookup = {
-                      from: pipeline.$lookup.from,
-                      let: { [letField]: `$${pipeline.$lookup.localField}` },
-                      pipeline: [
-                        softDeleted.nonDeletedPipelineMatchOptions,
-                        {
-                          $match: {
-                            $expr: {
-                              $eq: [
-                                `$$${letField}`,
-                                `$${pipeline.$lookup.foreignField}`,
-                              ],
-                            },
-                          },
-                        },
-                      ],
-                      as: pipeline.$lookup.as,
-                    };
-                  } else {
+                  if (
+                    !softDeleted.mongoDBVersion ||
+                    softDeleted.mongoDBVersion >= '5'
+                  ) {
                     pipeline.$lookup.pipeline = [
                       softDeleted.nonDeletedPipelineMatchOptions,
                     ];
+                  } else {
+                    if (softDeleted.mongoDBVersion < '3.6') {
+                      throw new Error(
+                        'Mongodb server version smaller than 3.6 does not support aggregate lookup pipeline overrides',
+                      );
+                    }
+
+                    if (softDeleted.mongoDBVersion < '5') {
+                      const letField = 'localField';
+                      pipeline.$lookup = {
+                        from: pipeline.$lookup.from,
+                        let: { [letField]: `$${pipeline.$lookup.localField}` },
+                        pipeline: [
+                          softDeleted.nonDeletedPipelineMatchOptions,
+                          {
+                            $match: {
+                              $expr: {
+                                $eq: [
+                                  `$$${letField}`,
+                                  `$${pipeline.$lookup.foreignField}`,
+                                ],
+                              },
+                            },
+                          },
+                        ],
+                        as: pipeline.$lookup.as,
+                      };
+                    }
                   }
                 }
               }

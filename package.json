@@ -1,6 +1,6 @@
 {
   "name": "mongoose-soft-delete-plugin",
-  "version": "0.1.5",
+  "version": "0.1.0",
   "description": "mongoose soft delete plugin",
   "keywords": [
     "mongoose",

@@ -1,2 +1,2 @@
-# mongoose-soft-deleted
+# mongoose-soft-deleted-plugin
 mongoose soft-deleted plugin

@@ -1,10 +1,22 @@
 {
-  "name": "mongoose-soft-deleted-plugin",
-  "version": "0.1.1",
-  "description": "mongoose soft deleted plugin",
+  "name": "mongoose-soft-delete-plugin",
+  "version": "0.1.5",
+  "description": "mongoose soft delete plugin",
+  "keywords": [
+    "mongoose",
+    "soft",
+    "delete",
+    "deleted",
+    "plugin",
+    "typescript"
+  ],
   "author": "GO_DIE",
   "private": false,
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GO-DIE/mongoose-soft-delete-plugin"
+  },
   "scripts": {
     "prepare": "husky install",
     "format": "prettier --write \"*.ts\" \"**/*.+(json|yaml)\"",

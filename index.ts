@@ -19,7 +19,7 @@ import {
   PipelineStage,
 } from 'mongoose';
 
-export interface SoftDeletedModel<
+export interface SoftDeleteModel<
   T,
   TQueryHelpers = {},
   TMethodsAndOverrides = {},
@@ -70,13 +70,13 @@ export interface SoftDeletedModel<
   ): QueryWithHelpers<ResultDoc | null, ResultDoc, TQueryHelpers, T>;
 }
 
-const softDeletedMapping = {
+const softDeleteMapping = {
   softDeleteOne: 'updateOne',
   softDeleteMany: 'updateMany',
   findByIdAndSoftDelete: 'findByIdAndUpdate',
 } as const;
-type SoftDeletedMapping = typeof softDeletedMapping;
-type SoftDeletedMappingKey = keyof SoftDeletedMapping;
+type SoftDeleteMapping = typeof softDeleteMapping;
+type SoftDeleteMappingKey = keyof SoftDeleteMapping;
 
 const overriddenMethods = [
   'aggregate',
@@ -112,25 +112,25 @@ type OverriddenMethod = typeof overriddenMethods[number];
 
 type OverrideOption = Record<OverriddenMethod, boolean>;
 
-export class SoftDeleted {
+export class SoftDelete {
   private mongoDBVersion: string | undefined;
-  private softDeletedField: string;
+  private softDeleteField: string;
   private overrideOptions: OverrideOption | undefined;
   private nonDeletedFilterOptions: Record<string, null>;
   private deleteUpdateOptions: Record<string, Date>;
   private nonDeletedPipelineMatchOptions: PipelineStage.Match;
 
   constructor(
-    softDeletedField: string,
+    softDeleteField: string,
     options: { mongoDBVersion?: string; override?: OverrideOption } = {},
   ) {
     const { mongoDBVersion, override } = options;
     this.mongoDBVersion = mongoDBVersion;
-    this.softDeletedField = softDeletedField;
+    this.softDeleteField = softDeleteField;
     this.overrideOptions = override;
-    this.nonDeletedFilterOptions = { [this.softDeletedField]: null };
+    this.nonDeletedFilterOptions = { [this.softDeleteField]: null };
     this.deleteUpdateOptions = {
-      get [this.softDeletedField]() {
+      get [this.softDeleteField]() {
         return new Date();
       },
     };
@@ -153,24 +153,24 @@ export class SoftDeleted {
 
   getPlugin() {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const softDeleted = this;
+    const softDelete = this;
     return (schema: Schema) => {
-      const softDeletedMethods = Object.keys(
-        softDeletedMapping,
-      ) as SoftDeletedMappingKey[];
+      const softDeleteMethods = Object.keys(
+        softDeleteMapping,
+      ) as SoftDeleteMappingKey[];
 
-      softDeletedMethods.forEach(softDeletedMethod => {
-        schema.statics[softDeletedMethod] = async function (
+      softDeleteMethods.forEach(softDeleteMethod => {
+        schema.statics[softDeleteMethod] = async function (
           this,
           ...args: any[]
         ) {
           const softDeleteToUpdateArgs = [
-            Object.assign(args[0] || {}, softDeleted.nonDeletedFilterOptions),
-            { $set: softDeleted.deleteUpdateOptions },
+            Object.assign(args[0] || {}, softDelete.nonDeletedFilterOptions),
+            { $set: softDelete.deleteUpdateOptions },
             ...args.slice(1, args.length),
           ];
 
-          return (this[softDeletedMapping[softDeletedMethod]] as Function)(
+          return (this[softDeleteMapping[softDeleteMethod]] as Function)(
             ...softDeleteToUpdateArgs,
           );
         };
@@ -178,8 +178,8 @@ export class SoftDeleted {
 
       overriddenMethods.forEach(overriddenMethod => {
         if (
-          softDeleted.overrideOptions &&
-          !softDeleted.overrideOptions[overriddenMethod]
+          softDelete.overrideOptions &&
+          !softDelete.overrideOptions[overriddenMethod]
         ) {
           return;
         }
@@ -192,45 +192,45 @@ export class SoftDeleted {
             if (
               pipelines.some(pipeline => {
                 if (
-                  softDeleted.isPipelineStageMatch(pipeline) &&
-                  pipeline?.$match?.[softDeleted.softDeletedField]
+                  softDelete.isPipelineStageMatch(pipeline) &&
+                  pipeline?.$match?.[softDelete.softDeleteField]
                 ) {
                   return true;
                 }
                 return false;
               })
             ) {
-              pipelines.unshift(softDeleted.nonDeletedPipelineMatchOptions);
+              pipelines.unshift(softDelete.nonDeletedPipelineMatchOptions);
             }
 
             pipelines.forEach(pipeline => {
-              if (softDeleted.isPipelineStageLookup(pipeline)) {
+              if (softDelete.isPipelineStageLookup(pipeline)) {
                 if (pipeline.$lookup.pipeline) {
                   pipeline.$lookup.pipeline.unshift(
-                    softDeleted.nonDeletedPipelineMatchOptions,
+                    softDelete.nonDeletedPipelineMatchOptions,
                   );
                 } else {
                   if (
-                    !softDeleted.mongoDBVersion ||
-                    softDeleted.mongoDBVersion >= '5'
+                    !softDelete.mongoDBVersion ||
+                    softDelete.mongoDBVersion >= '5'
                   ) {
                     pipeline.$lookup.pipeline = [
-                      softDeleted.nonDeletedPipelineMatchOptions,
+                      softDelete.nonDeletedPipelineMatchOptions,
                     ];
                   } else {
-                    if (softDeleted.mongoDBVersion < '3.6') {
+                    if (softDelete.mongoDBVersion < '3.6') {
                       throw new Error(
                         'Mongodb server version smaller than 3.6 does not support aggregate lookup pipeline overrides',
                       );
                     }
 
-                    if (softDeleted.mongoDBVersion < '5') {
+                    if (softDelete.mongoDBVersion < '5') {
                       const letField = 'localField';
                       pipeline.$lookup = {
                         from: pipeline.$lookup.from,
                         let: { [letField]: `$${pipeline.$lookup.localField}` },
                         pipeline: [
-                          softDeleted.nonDeletedPipelineMatchOptions,
+                          softDelete.nonDeletedPipelineMatchOptions,
                           {
                             $match: {
                               $expr: {
@@ -256,26 +256,26 @@ export class SoftDeleted {
               if (
                 ['updateOne', 'updateMany', 'replaceOne'].includes(operation)
               ) {
-                if (!write.filter?.[softDeleted.softDeletedField]) {
+                if (!write.filter?.[softDelete.softDeleteField]) {
                   Object.assign(
                     write.filter || {},
-                    softDeleted.nonDeletedFilterOptions,
+                    softDelete.nonDeletedFilterOptions,
                   );
                 }
               }
             });
           } else if (overriddenMethod === 'distinct') {
-            if (!args[1]?.[softDeleted.softDeletedField]) {
+            if (!args[1]?.[softDelete.softDeleteField]) {
               args[1] = Object.assign(
                 args[1] || {},
-                softDeleted.nonDeletedFilterOptions,
+                softDelete.nonDeletedFilterOptions,
               );
             }
           } else {
-            if (!args[0]?.[softDeleted.softDeletedField]) {
+            if (!args[0]?.[softDelete.softDeleteField]) {
               args[0] = Object.assign(
                 args[0] || {},
-                softDeleted.nonDeletedFilterOptions,
+                softDelete.nonDeletedFilterOptions,
               );
             }
           }

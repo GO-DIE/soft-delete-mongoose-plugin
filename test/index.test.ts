@@ -1,4 +1,4 @@
-import { SoftDeleted, SoftDeletedModel } from './../index';
+import { SoftDelete, SoftDeleteModel } from './../index';
 import {
   set,
   Schema,
@@ -18,7 +18,7 @@ const enum CollectionEnum {
   students = 'students',
 }
 
-interface ISoftDeleted {
+interface ISoftDelete {
   [SOFT_DELETED_FIELD]: Date | null;
 }
 
@@ -26,8 +26,8 @@ interface IClass {
   grade: number;
   teacher: string;
 }
-type ClassWithSoftDeleted = IClass & ISoftDeleted;
-type ClassDocument = ClassWithSoftDeleted & Document;
+type ClassWithSoftDelete = IClass & ISoftDelete;
+type ClassDocument = ClassWithSoftDelete & Document;
 
 interface IStudent {
   classId: Types.ObjectId;
@@ -35,8 +35,8 @@ interface IStudent {
   age: number;
   avatar?: string;
 }
-type StudentWithSoftDeleted = IStudent & ISoftDeleted;
-type StudentDocument = StudentWithSoftDeleted & Document;
+type StudentWithSoftDelete = IStudent & ISoftDelete;
+type StudentDocument = StudentWithSoftDelete & Document;
 
 type UnassignedClassStudent = Omit<IStudent, 'classId'>;
 type AggregateDoc = ClassDocument & { students: StudentDocument[] };
@@ -64,8 +64,8 @@ const liSi: UnassignedClassStudent = {
 };
 
 describe('mongoose soft deleted plugin', () => {
-  let ClassModel: SoftDeletedModel<ClassWithSoftDeleted>;
-  let StudentModel: SoftDeletedModel<StudentWithSoftDeleted>;
+  let ClassModel: SoftDeleteModel<ClassWithSoftDelete>;
+  let StudentModel: SoftDeleteModel<StudentWithSoftDelete>;
   let classDocs: ClassDocument[];
   let class1Doc: ClassDocument;
   let class2Doc: ClassDocument;
@@ -78,29 +78,29 @@ describe('mongoose soft deleted plugin', () => {
       'mongodb://localhost:27017/test?readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false',
     );
     const serverInfo = await connection.db.admin().serverInfo();
-    const softDeletedPlugin = new SoftDeleted(SOFT_DELETED_FIELD, {
+    const softDeletePlugin = new SoftDelete(SOFT_DELETED_FIELD, {
       mongoDBVersion: serverInfo.version,
     }).getPlugin();
 
     const classSchema = new Schema<
-      ClassWithSoftDeleted,
-      SoftDeletedModel<ClassWithSoftDeleted>
+      ClassWithSoftDelete,
+      SoftDeleteModel<ClassWithSoftDelete>
     >({
       grade: { type: Number, required: true },
       teacher: { type: String, required: true },
       deleteAt: { type: Date, default: null },
     });
 
-    classSchema.plugin(softDeletedPlugin);
+    classSchema.plugin(softDeletePlugin);
 
     ClassModel = model<
-      ClassWithSoftDeleted,
-      SoftDeletedModel<ClassWithSoftDeleted>
+      ClassWithSoftDelete,
+      SoftDeleteModel<ClassWithSoftDelete>
     >(CollectionEnum.classes, classSchema);
 
     const studentSchema = new Schema<
-      StudentWithSoftDeleted,
-      SoftDeletedModel<StudentWithSoftDeleted>
+      StudentWithSoftDelete,
+      SoftDeleteModel<StudentWithSoftDelete>
     >({
       classId: { type: Schema.Types.ObjectId, required: true },
       name: { type: String, required: true },
@@ -109,11 +109,11 @@ describe('mongoose soft deleted plugin', () => {
       deleteAt: { type: Date, default: null },
     });
 
-    studentSchema.plugin(softDeletedPlugin);
+    studentSchema.plugin(softDeletePlugin);
 
     StudentModel = model<
-      StudentWithSoftDeleted,
-      SoftDeletedModel<StudentWithSoftDeleted>
+      StudentWithSoftDelete,
+      SoftDeleteModel<StudentWithSoftDelete>
     >(CollectionEnum.students, studentSchema);
   });
 

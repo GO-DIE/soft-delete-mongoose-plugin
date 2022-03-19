@@ -1,6 +1,6 @@
 {
-  "name": "mongoose-soft-delete-plugin",
-  "version": "0.1.0",
+  "name": "soft-delete-mongoose-plugin",
+  "version": "0.0.1",
   "description": "mongoose soft delete plugin",
   "keywords": [
     "mongoose",
@@ -8,20 +8,23 @@
     "delete",
     "deleted",
     "plugin",
-    "typescript"
+    "typescript",
+    "handy"
   ],
   "author": "GO_DIE",
   "private": false,
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/GO-DIE/mongoose-soft-delete-plugin"
+    "url": "https://github.com/GO-DIE/soft-delete-mongoose-plugin"
   },
   "scripts": {
     "prepare": "husky install",
     "format": "prettier --write \"*.ts\" \"**/*.+(json|yaml)\"",
     "lint": "eslint \"**/*.ts\" --fix",
-    "test": "sh ./test/build/run.sh & jest --coverage & sh ./test/build/end.sh"
+    "build": "sh ./build/build.sh",
+    "build:clean": "sh ./build/clean.sh",
+    "test": "npm run build & jest --coverage & npm run build:clean"
   },
   "dependencies": {
     "mongoose": "^6.2.5"

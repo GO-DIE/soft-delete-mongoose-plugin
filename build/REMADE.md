@@ -5,8 +5,7 @@ window 11 + git bash
 # run shell（build MongoDB server）：
 
 ## build
-sh run.sh
+sh build.sh
 
-## end
-sh end.sh
-
+## clean
+sh clean.sh

@@ -1,6 +1,4 @@
 #!/bin/bash
-cd ./test/build/
+cd "$(dirname "$0")"
 
 docker-compose rm -s -f
-
-cd ../../

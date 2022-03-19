@@ -1,5 +1,6 @@
 #!/bin/bash
-cd ./test/build/
+# cd ./build/
+cd "$(dirname "$0")"
 
 echo `pwd`
 
@@ -10,5 +11,3 @@ docker-compose up -d
 sleep 5
 # If run in windows(git bash): use // replace /
 docker exec mongo1 //scripts//rs-init.sh
-
-cd ../../

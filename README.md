@@ -9,8 +9,7 @@ Methods were added and overridden on mongoose model to realize soft deletion log
 
 - Soft delete data using delete time markers is friendly for scenarios where a unique index needs to be created
 - Support customizable soft delete field identification, field type of Date | null
-- [Add __deleteById()__ static method](#simple-usage)
-- [Add independent soft delete methods to the mongoose model](# ), all hard delete methods are retained completely
+- [Add independent soft delete methods to the mongoose model](# Soft delete methods), all hard delete methods are retained completely
 - Rewrite all query and update methods on mongoose Model and automatically inject soft delete filtering conditions; If the user filter contains any queries related to soft delete fields, the program will assume that the user needs to have full control of the data and will not automatically inject soft delete filtering conditions
 
 
@@ -149,8 +148,6 @@ new SoftDelete("softDeleteField", {
 
 
 # Soft delete methods
-
-Add independent soft delete methods to the mongoose model, 最终调用的是mongoose model对应的update方法，除了不需要传update option 参数之外，使用方法跟对应的update方法相同， 对应关系如下：
 
 Add independent soft delete methods to the mongoose model, the soft delete method actually calls the corresponding mongoose model update method：
 

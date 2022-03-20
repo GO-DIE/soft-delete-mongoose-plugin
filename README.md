@@ -9,7 +9,8 @@ Methods were added and overridden on mongoose model to realize soft deletion log
 
 - Soft delete data using delete time markers is friendly for scenarios where a unique index needs to be created
 - Support customizable soft delete field identification, field type of Date | null
-- Add independent soft delete methods to the mongoose model, all hard delete methods are retained completely
+- [Add __deleteById()__ static method](#simple-usage)
+- [Add independent soft delete methods to the mongoose model](# ), all hard delete methods are retained completely
 - Rewrite all query and update methods on mongoose Model and automatically inject soft delete filtering conditions; If the user filter contains any queries related to soft delete fields, the program will assume that the user needs to have full control of the data and will not automatically inject soft delete filtering conditions
 
 
@@ -92,13 +93,12 @@ await StudentModel.softDeleteMany();
 **Parameters：**
 
 - *softDeleteField* **\<string\>**  Soft delete field name, type of Date | null
+
 - *options* **\<Object\>**
+​  *mongoDBVersion* **\<string\>**  Rewrite with better query statements based on the mongoDB version used, default the last MongoDB version
+​  *override* **\<OverrideOptions\>** Sets whether the specified method needs to be overridden
 
-​		- *mongoDBVersion* **\<string\>**  Rewrite with better query statements based on the mongoDB version used, default the last MongoDB version
-
-​		- *override* **\<OverrideOptions\>** Sets whether the specified method needs to be overridden
-
-*note:* 
+*note:*
 
 ```typescript
 type OverrideOptions = <Record<OverriddenMethod, boolean>>
@@ -144,7 +144,7 @@ new SoftDelete("softDeleteField", {
 
 ## Method: softDelete.getPlugin
 
-**return** <Function>  the mongoose plugin function 
+**return** <Function>  the mongoose plugin function
 
 
 

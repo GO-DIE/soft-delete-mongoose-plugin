@@ -1,4 +1,4 @@
-import { SoftDelete, SoftDeleteModel } from './../index';
+import { SoftDelete, SoftDeleteModel } from '../src';
 import {
   set,
   Schema,

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mongo <<EOF
+mongosh <<EOF
 var config = {
     "_id": "dbrs",
     "version": 1,

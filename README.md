@@ -3,14 +3,14 @@ soft-delete-mongoose-plugin
 
 A simple and friendly soft delete plugin for mongoose，implementation using TS.
 
-Methods were added and rewritten on Mongoose model to realize soft deletion logic.
+Methods were added and overridden on mongoose model to realize soft deletion logic.
 
 # Features
 
 - Soft delete data using delete time markers is friendly for scenarios where a unique index needs to be created
 - Support customizable soft delete field identification, field type of Date | null
 - Add independent soft delete methods to the mongoose model, all hard delete methods are retained completely
-- Rewrite all query and update methods on Mongoose Model and automatically inject soft delete filtering conditions; If the user filter contains any queries related to soft delete fields, the program will assume that the user needs to have full control of the data and will not automatically inject soft delete filters
+- Rewrite all query and update methods on mongoose Model and automatically inject soft delete filtering conditions; If the user filter contains any queries related to soft delete fields, the program will assume that the user needs to have full control of the data and will not automatically inject soft delete filtering conditions
 
 
 
@@ -28,7 +28,7 @@ $ npm install soft-delete-mongoose-plugin
 
 ### Typescript
 
-Use of the SoftDeleteModel type, instead of the Model type.
+Use of the **SoftDeleteModel** type, instead of the Model type.
 
 ```typescript
 import { set, Schema, model, connect } from 'mongoose';
@@ -91,12 +91,12 @@ await StudentModel.softDeleteMany();
 
 **Parameters：**
 
-- *softDeleteField*<string>  Soft delete field name, type of Date | null
-- *options*<Object>
+- *softDeleteField* **\<string\>**  Soft delete field name, type of Date | null
+- *options* **\<Object\>**
 
-​		*mongoDBVersion*<string>  Rewrite with better query statements based on the mongoDB version used, default the last MongoDB version
+​		- *mongoDBVersion* **\<string\>**  Rewrite with better query statements based on the mongoDB version used, default the last MongoDB version
 
-​		*override*: <OverrideOptions> Sets whether the specified method needs to be overridden
+​		- *override* **\<OverrideOptions\>** Sets whether the specified method needs to be overridden
 
 *note:* 
 
@@ -145,3 +145,20 @@ new SoftDelete("softDeleteField", {
 ## Method: softDelete.getPlugin
 
 **return** <Function>  the mongoose plugin function 
+
+
+
+# Soft delete methods
+
+Add independent soft delete methods to the mongoose model, 最终调用的是mongoose model对应的update方法，除了不需要传update option 参数之外，使用方法跟对应的update方法相同， 对应关系如下：
+
+Add independent soft delete methods to the mongoose model, the soft delete method actually calls the corresponding mongoose model update method：
+
+| soft delete method    | update method     |
+| --------------------- | ----------------- |
+| softDeleteOne         | updateOne         |
+| softDeleteMany        | updateMany        |
+| findByIdAndSoftDelete | findByIdAndUpdate |
+
+The function takes the same parameters as the corresponding update method, except that the update options parameter is not passed.
+

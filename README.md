@@ -95,9 +95,9 @@ await StudentModel.softDeleteMany();
 
 - *options* **\<Object\>**
  
-    mongoDBVersion **\<string\>**  Rewrite with better query statements based on the mongoDB version used, default the last MongoDB version
+    *mongoDBVersion* **\<string\>**  Rewrite with better query statements based on the mongoDB version used, default the last MongoDB version
  
-    override **\<OverrideOptions\>** Sets whether the specified method needs to be overridden
+    *override* **\<OverrideOptions\>** Sets whether the specified method needs to be overridden
 
 *note:*
 

@@ -16,10 +16,10 @@
   "private": false,
   "license": "MIT",
   "files": [
-    "dist/**/*"
+    "dist/"
   ],
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/GO-DIE/soft-delete-mongoose-plugin"

@@ -1,0 +1,19 @@
+{
+  "name": "samples",
+  "version": "1.0.0",
+  "description": "",
+  "main": "sample.js",
+  "scripts": {
+    "js": "node ./js",
+    "ts": "ts-node ./ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "soft-delete-mongoose-plugin": "^0.0.1"
+  },
+  "devDependencies": {
+    "ts-node": "^10.7.0",
+    "typescript": "^4.6.2"
+  }
+}

@@ -16,5 +16,5 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false
   },
-  "include": ["src", "test"]
+  "include": ["src"]
 }

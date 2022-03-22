@@ -1,6 +1,6 @@
 {
   "name": "soft-delete-mongoose-plugin",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "mongoose soft delete plugin",
   "keywords": [
     "mongoose",
@@ -18,15 +18,15 @@
   "files": [
     "dist/**/*"
   ],
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "index.js",
+  "types": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/GO-DIE/soft-delete-mongoose-plugin"
   },
   "scripts": {
     "prepare": "husky install",
-    "build": "tsc",
+    "build": "rm -rf dist & tsc",
     "prepublish": "rm -rf dist & tsc",
     "format": "prettier --write \"*.ts\" \"**/*.+(json|yaml)\"",
     "lint": "eslint \"**/*.ts\" --fix",

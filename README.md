@@ -94,8 +94,10 @@ await StudentModel.softDeleteMany();
 - *softDeleteField* **\<string\>**  Soft delete field name, type of Date | null
 
 - *options* **\<Object\>**
-​  *mongoDBVersion* **\<string\>**  Rewrite with better query statements based on the mongoDB version used, default the last MongoDB version
-​  *override* **\<OverrideOptions\>** Sets whether the specified method needs to be overridden
+ 
+    mongoDBVersion **\<string\>**  Rewrite with better query statements based on the mongoDB version used, default the last MongoDB version
+ 
+    override **\<OverrideOptions\>** Sets whether the specified method needs to be overridden
 
 *note:*
 

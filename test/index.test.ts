@@ -1,6 +1,7 @@
 import { SoftDelete, SoftDeleteModel } from '../src';
 import {
   set,
+  plugin,
   Schema,
   model,
   connect,
@@ -81,6 +82,7 @@ describe('mongoose soft deleted plugin', () => {
     const softDeletePlugin = new SoftDelete(SOFT_DELETED_FIELD, {
       mongoDBVersion: serverInfo.version,
     }).getPlugin();
+    plugin(softDeletePlugin);
 
     const classSchema = new Schema<
       ClassWithSoftDelete,
@@ -90,8 +92,6 @@ describe('mongoose soft deleted plugin', () => {
       teacher: { type: String, required: true },
       deleteAt: { type: Date, default: null },
     });
-
-    classSchema.plugin(softDeletePlugin);
 
     ClassModel = model<
       ClassWithSoftDelete,
@@ -108,8 +108,6 @@ describe('mongoose soft deleted plugin', () => {
       avatar: { type: String, required: false },
       deleteAt: { type: Date, default: null },
     });
-
-    studentSchema.plugin(softDeletePlugin);
 
     StudentModel = model<
       StudentWithSoftDelete,

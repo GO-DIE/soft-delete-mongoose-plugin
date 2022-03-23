@@ -31,33 +31,48 @@ $ npm install soft-delete-mongoose-plugin
 Use of the **SoftDeleteModel** type, instead of the Model type.
 
 ```typescript
-import { set, Schema, model, connect } from 'mongoose';
+import { set, Schema, model, connect, connection, plugin } from 'mongoose';
 import { SoftDelete, SoftDeleteModel } from 'soft-delete-mongoose-plugin';
 
-// defind soft delete field name
-const SOFT_DELETED_FIELD = 'deleteAt';
+async function main() {
+  set('debug', true);
 
-interface Student {
+  await connect(
+    'mongodb://localhost:27017/test?readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false',
+  );
+
+  // defind soft delete field name
+  const SOFT_DELETE_FIELD = 'deleteAt';
+
+  // use as global plugin
+  plugin(new SoftDelete(SOFT_DELETE_FIELD).getPlugin());
+
+  interface Student {
     name: string;
-    [SOFT_DELETED_FIELD]: Date | null; // soft delete field type is Date or null
-}
+    [SOFT_DELETE_FIELD]: Date | null; // soft delete field type is Date or null
+  }
 
-// use of the SoftDeleteModel type, instead of the Model type.
-const studentSchema = new Schema<Student, SoftDeleteModel<Student>>({
+  // use of the SoftDeleteModel type, instead of the Model type.
+  const studentSchema = new Schema<Student, SoftDeleteModel<Student>>({
     name: { type: String, required: true },
     deleteAt: { type: Date, default: null },
-});
+  });
 
-studentSchema.plugin(new SoftDelete(SOFT_DELETED_FIELD).getPlugin());
+  studentSchema.plugin(new SoftDelete(SOFT_DELETE_FIELD).getPlugin());
 
-// use of the SoftDeleteModel type, instead of the Model type.
-const studentModel = model<Student, SoftDeleteModel<Student>>(
+  // use of the SoftDeleteModel type, instead of the Model type.
+  const studentModel = model<Student, SoftDeleteModel<Student>>(
     'students',
     studentSchema,
-);
+  );
 
-// It's ready to use studentModel to soft delete documents
-await studentModel.softDeleteMany();
+  // It's ready to use studentModel to soft delete documents
+  await studentModel.softDeleteMany();
+
+  await connection.close();
+}
+
+main();
 ```
 
 
@@ -65,22 +80,36 @@ await studentModel.softDeleteMany();
 ### JavaScript
 
 ```javascript
-const { connect, Schema, model } = require('mongoose');
+const { set, Schema, model, connect, connection, plugin } = require('mongoose');
 const { SoftDelete } = require('soft-delete-mongoose-plugin');
 
-// defind soft delete field name
-const SOFT_DELETE_FIELD = 'deleteAt';
-const studentSchema = new Schema({
+async function main() {
+  set('debug', true);
+
+  await connect(
+    'mongodb://localhost:27017/test?readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false',
+  );
+
+  // defind soft delete field name
+  const SOFT_DELETE_FIELD = 'deleteAt';
+
+  // use as global plugin
+  plugin(new SoftDelete(SOFT_DELETE_FIELD).getPlugin());
+
+  const studentSchema = new Schema({
     name: { type: String, required: true },
-    [SOFT_DELETE_FIELD]: { type: Date, default: null }, // soft delete field type must be Date | null
-});
+    [SOFT_DELETE_FIELD]: { type: Date, default: null }, // soft delete field type is Date or null
+  });
 
-studentSchema.plugin(new SoftDelete(SOFT_DELETE_FIELD).getPlugin());
+  const StudentModel = model('students', studentSchema);
+    
+  // It's ready to use studentModel to soft delete documents
+  await StudentModel.softDeleteMany();
 
-const StudentModel = model('students', studentSchema);
+  await connection.close();
+}
 
-// It's ready to use studentModel to soft delete documents
-await StudentModel.softDeleteMany();
+main();
 ```
 
 
@@ -94,9 +123,9 @@ await StudentModel.softDeleteMany();
 - *softDeleteField* **\<string\>**  Soft delete field name, type of Date | null
 
 - *options* **\<Object\>**
- 
+
     *mongoDBVersion* **\<string\>**  Rewrite with better query statements based on the mongoDB version used, default the last MongoDB version
- 
+
     *override* **\<OverrideOptions\>** Sets whether the specified method needs to be overridden
 
 *note:*

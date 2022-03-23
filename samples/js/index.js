@@ -20,6 +20,7 @@ async function main() {
   });
 
   const StudentModel = model('students', studentSchema);
+
   // It's ready to use studentModel to soft delete documents
   await StudentModel.softDeleteMany();
 

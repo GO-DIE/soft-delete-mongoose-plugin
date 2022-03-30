@@ -81,7 +81,6 @@ type SoftDeleteMappingKey = keyof SoftDeleteMapping;
 
 const overriddenMethods = [
   'aggregate',
-  // 'bulkSave',
   'bulkWrite',
   'count',
   'countDocuments',
@@ -141,14 +140,10 @@ export class SoftDelete {
     };
   }
 
-  private isLookupStage(stage: PipelineStage): stage is PipelineStage.Lookup {
-    return (stage as Record<string, any>).$lookup ? true : false;
-  }
-
-  private isGraphLookupStage(
-    stage: PipelineStage,
-  ): stage is PipelineStage.GraphLookup {
-    return (stage as Record<string, any>).$graphLookup ? true : false;
+  private isPipelineStageLookup(
+    object: Record<string, any>,
+  ): object is PipelineStage.Lookup {
+    return object.$lookup ? true : false;
   }
 
   private isIncludeSoftDeleteField(
@@ -195,15 +190,15 @@ export class SoftDelete {
           ...args: any[]
         ) {
           if (overriddenMethod === 'aggregate') {
-            const pipelineStages: PipelineStage[] = args[0] || [];
-            if (!softDelete.isIncludeSoftDeleteField(pipelineStages)) {
-              pipelineStages.unshift(softDelete.nonDeletedPipelineMatchOptions);
+            const pipelines: PipelineStage[] = args[0] || [];
+            if (!softDelete.isIncludeSoftDeleteField(pipelines)) {
+              pipelines.unshift(softDelete.nonDeletedPipelineMatchOptions);
             }
 
-            pipelineStages.forEach(stage => {
-              if (softDelete.isLookupStage(stage)) {
-                if (stage.$lookup.pipeline) {
-                  stage.$lookup.pipeline.unshift(
+            pipelines.forEach(pipeline => {
+              if (softDelete.isPipelineStageLookup(pipeline)) {
+                if (pipeline.$lookup.pipeline) {
+                  pipeline.$lookup.pipeline.unshift(
                     softDelete.nonDeletedPipelineMatchOptions,
                   );
                 } else {
@@ -211,14 +206,14 @@ export class SoftDelete {
                     !softDelete.mongoDBVersion ||
                     semver.gt(softDelete.mongoDBVersion, '5.0.0')
                   ) {
-                    stage.$lookup.pipeline = [
+                    pipeline.$lookup.pipeline = [
                       softDelete.nonDeletedPipelineMatchOptions,
                     ];
                   } else {
                     const letField = 'localField';
-                    stage.$lookup = {
-                      from: stage.$lookup.from,
-                      let: { [letField]: `$${stage.$lookup.localField}` },
+                    pipeline.$lookup = {
+                      from: pipeline.$lookup.from,
+                      let: { [letField]: `$${pipeline.$lookup.localField}` },
                       pipeline: [
                         softDelete.nonDeletedPipelineMatchOptions,
                         {
@@ -226,21 +221,16 @@ export class SoftDelete {
                             $expr: {
                               $eq: [
                                 `$$${letField}`,
-                                `$${stage.$lookup.foreignField}`,
+                                `$${pipeline.$lookup.foreignField}`,
                               ],
                             },
                           },
                         },
                       ],
-                      as: stage.$lookup.as,
+                      as: pipeline.$lookup.as,
                     };
                   }
                 }
-              } else if (softDelete.isGraphLookupStage(stage)) {
-                stage.$graphLookup.restrictSearchWithMatch = Object.assign(
-                  stage.$graphLookup.restrictSearchWithMatch || {},
-                  softDelete.nonDeletedFilterOptions,
-                );
               }
             });
           } else if (overriddenMethod === 'bulkWrite') {
@@ -250,9 +240,11 @@ export class SoftDelete {
               if (
                 ['updateOne', 'updateMany', 'replaceOne'].includes(operation)
               ) {
-                const filter = write.filter || {};
-                if (softDelete.isIncludeSoftDeleteField(filter)) {
-                  Object.assign(filter, softDelete.nonDeletedFilterOptions);
+                if (softDelete.isIncludeSoftDeleteField(write.filter)) {
+                  Object.assign(
+                    write.filter || {},
+                    softDelete.nonDeletedFilterOptions,
+                  );
                 }
               }
             });

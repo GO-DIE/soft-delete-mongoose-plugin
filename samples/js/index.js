@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 const { set, Schema, model, connect, connection, plugin } = require('mongoose');
 const { SoftDelete } = require('soft-delete-mongoose-plugin');
 

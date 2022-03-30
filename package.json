@@ -9,28 +9,27 @@
     "deleted",
     "plugin",
     "typescript",
-    "simple",
-    "friendly"
+    "nodejs"
   ],
   "author": "GO_DIE",
   "private": false,
   "license": "MIT",
   "files": [
-    "dist/"
+    "build"
   ],
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./build/index.js",
+  "types": "./build/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/GO-DIE/soft-delete-mongoose-plugin"
   },
   "scripts": {
     "prepare": "husky install",
-    "build": "rm -rf dist & tsc",
-    "prepublish": "rm -rf dist & tsc",
+    "build": "rm -rf build & tsc --project tsconfig.build.json",
+    "prepublish": "npm run build",
     "format": "prettier --write \"*.ts\" \"**/*.+(json|yaml)\"",
     "lint": "eslint \"**/*.ts\" --fix",
-    "test": "sh ./build/build.sh & jest --coverage & sh ./build/clean.sh"
+    "test": "sh ./scripts/build.sh & jest --coverage & sh ./scripts/clean.sh"
   },
   "dependencies": {
     "mongoose": "^6.2.5",

@@ -1,7 +1,7 @@
 {
   "name": "samples",
   "version": "1.0.0",
-  "description": "",
+  "description": "samples",
   "main": "sample.js",
   "scripts": {
     "js": "node ./js",
@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "soft-delete-mongoose-plugin": "^0.0.1"
+    "soft-delete-mongoose-plugin": "^1.1.0"
   },
   "devDependencies": {
     "ts-node": "^10.7.0",

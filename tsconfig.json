@@ -9,6 +9,5 @@
     "outDir": "./build",
     "baseUrl": "./",
     "strictBindCallApply": false
-  },
-  "include": ["src"]
+  }
 }

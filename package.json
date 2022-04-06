@@ -1,6 +1,6 @@
 {
   "name": "soft-delete-mongoose-plugin",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "description": "mongoose soft delete plugin",
   "keywords": [
     "mongoose",
@@ -29,9 +29,10 @@
     "prepublish": "npm run build",
     "format": "prettier --write \"*.ts\" \"**/*.+(json|yaml)\"",
     "lint": "eslint \"**/*.ts\" --fix",
-    "test": "sh ./scripts/build.sh & jest --coverage & sh ./scripts/clean.sh"
+    "test": "sh ./scripts/build.sh & jest --coverage ./test & sh ./scripts/clean.sh"
   },
   "dependencies": {
+    "lodash": "^4.17.21",
     "mongoose": "^6.2.8",
     "semver": "^7.3.5"
   },
@@ -39,6 +40,7 @@
     "@commitlint/cli": "^16.2.1",
     "@commitlint/config-angular": "^16.2.1",
     "@types/jest": "^27.4.1",
+    "@types/lodash": "^4.14.181",
     "@types/node": "^17.0.21",
     "@types/semver": "^7.3.9",
     "@typescript-eslint/eslint-plugin": "^5.14.0",

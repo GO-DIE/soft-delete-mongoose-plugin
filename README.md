@@ -7,8 +7,8 @@ Methods were added and overridden on mongoose model to realize soft deletion log
 
 # Features
 
-- Soft delete data using delete time markers is friendly for scenarios where a unique index needs to be created
-- Support customizable soft delete field identification, field type of Date | null
+- Soft delete data using soft delete flag and date markers is friendly for scenarios where a unique index needs to be created
+- User-defined soft delete field names are supported
 - [Add independent soft delete methods to the mongoose model](#soft-delete-methods), all hard delete methods are retained completely
 - Rewrite all query and update methods on mongoose Model and automatically inject soft delete filtering conditions; If the user filter contains any queries related to soft delete fields, the program will assume that the user needs to have full control of the data and will not automatically inject soft delete filtering conditions
 
@@ -28,7 +28,7 @@ $ npm install soft-delete-mongoose-plugin
 
 ### Typescript
 
-Use of the **SoftDeleteModel** type, instead of the Model type.
+Use of the **SoftDeleteModel** type, instead of the **Model** type.
 
 ```typescript
 import { set, Schema, model, connect, connection, plugin } from 'mongoose';
@@ -37,37 +37,43 @@ import { SoftDelete, SoftDeleteModel } from 'soft-delete-mongoose-plugin';
 async function main() {
   set('debug', true);
 
-  await connect(
-    'mongodb://localhost:27017/test?readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false',
-  );
+  await connect('mongodb://localhost:27017/test?directConnection=true');
 
   // defind soft delete field name
-  const SOFT_DELETE_FIELD = 'deleteAt';
+  const IS_DELETED_FIELD = 'isDeleted';
+  const DELETED_AT_FIELD = 'deletedAt';
 
-  // use as global plugin
-  plugin(new SoftDelete(SOFT_DELETE_FIELD).getPlugin());
+  // use soft delete plugin
+  plugin(
+    new SoftDelete({
+      isDeletedField: IS_DELETED_FIELD,
+      deletedAtField: DELETED_AT_FIELD,
+    }).getPlugin(),
+  );
 
-  interface Student {
-    name: string;
-    [SOFT_DELETE_FIELD]: Date | null; // soft delete field type is Date or null
+  interface ISoftDelete {
+    [IS_DELETED_FIELD]: boolean;
+    [DELETED_AT_FIELD]: Date | null;
   }
 
-  // use of the SoftDeleteModel type, instead of the Model type.
-  const studentSchema = new Schema<Student, SoftDeleteModel<Student>>({
+  interface IPerson extends ISoftDelete {
+    name: string;
+  }
+
+  const personSchema = new Schema<IPerson>({
     name: { type: String, required: true },
-    deleteAt: { type: Date, default: null },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
   });
 
-  studentSchema.plugin(new SoftDelete(SOFT_DELETE_FIELD).getPlugin());
-
   // use of the SoftDeleteModel type, instead of the Model type.
-  const studentModel = model<Student, SoftDeleteModel<Student>>(
-    'students',
-    studentSchema,
+  const personModel = model<IPerson, SoftDeleteModel<IPerson>>(
+    'persons',
+    personSchema,
   );
 
   // It's ready to use studentModel to soft delete documents
-  await studentModel.softDeleteMany();
+  await personModel.softDeleteMany();
 
   await connection.close();
 }
@@ -86,25 +92,31 @@ const { SoftDelete } = require('soft-delete-mongoose-plugin');
 async function main() {
   set('debug', true);
 
-  await connect(
-    'mongodb://localhost:27017/test?readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false',
-  );
+  await connect('mongodb://localhost:27017/test?directConnection=true');
 
   // defind soft delete field name
-  const SOFT_DELETE_FIELD = 'deleteAt';
+  const IS_DELETED_FIELD = 'isDeleted';
+  const DELETED_AT_FIELD = 'deletedAt';
 
-  // use as global plugin
-  plugin(new SoftDelete(SOFT_DELETE_FIELD).getPlugin());
+  // use soft delete plugin
+  plugin(
+    new SoftDelete({
+      isDeletedField: IS_DELETED_FIELD,
+      deletedAtField: DELETED_AT_FIELD,
+    }).getPlugin(),
+  );
 
-  const studentSchema = new Schema({
+  const personSchema = new Schema({
     name: { type: String, required: true },
-    [SOFT_DELETE_FIELD]: { type: Date, default: null }, // soft delete field type is Date or null
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
   });
 
-  const StudentModel = model('students', studentSchema);
-    
+  // use of the SoftDeleteModel type, instead of the Model type.
+  const personModel = model('persons', personSchema);
+
   // It's ready to use studentModel to soft delete documents
-  await StudentModel.softDeleteMany();
+  await personModel.softDeleteMany();
 
   await connection.close();
 }
@@ -120,51 +132,30 @@ main();
 
 **Parameters：**
 
-- *softDeleteField* **\<string\>**  Soft delete field name, type of Date | null
-
 - *options* **\<Object\>**
 
-    *mongoDBVersion* **\<string\>**  Rewrite with better query statements based on the mongoDB version used, default the last MongoDB version
+    *isDeletedField* **\<string\>**  Soft delete flag field name
+
+    *deletedAtField* **\<string\>**  Soft delete date field name
+
+    *mongoDBVersion*? **\<string\>**  Rewrite with better query statements based on the mongoDB version used, default the last MongoDB version
 
     *override* **\<OverrideOptions\>** Sets whether the specified method needs to be overridden
 
-*note:*
+    
 
-```typescript
-type OverrideOptions = <Record<OverriddenMethod, boolean>>
-```
-
-
-
-**The program supports the rewriting of mongoose Model method as follows**：
-
-```typescript
-const overriddenMethods: OverriddenMethod[] = [
-  'aggregate',
-  'bulkWrite',
-  'count',
-  'countDocuments',
-  'distinct',
-  'exists',
-  'find',
-  'findById',
-  'findByIdAndUpdate',
-  'findOne',
-  'findOneAndReplace',
-  'findOneAndUpdate',
-  'replaceOne',
-  'update',
-  'updateMany',
-  'updateOne',
-]
-```
+> Overridden model methods are supported by default：
+>
+> aggregate, bulkWrite, count, countDocuments, distinct, exists, find, findOne, findOneAndReplace, findOneAndUpdate, replaceOne, update, updateMany, updateOne
 
 
 
 **Example usage:**
 
 ```typescript
-new SoftDelete("softDeleteField", {
+new SoftDelete({
+  isDeletedField: 'isDeleted',
+  deletedAtField: 'deletedAt',
   mongoDBVersion: "5.0.5",
   override: { aggregate: false }, // not override aggregate method
 });
@@ -174,7 +165,7 @@ new SoftDelete("softDeleteField", {
 
 ## Method: softDelete.getPlugin
 
-**return** <Function>  the mongoose plugin function
+**return** **\<Function\>**  The mongoose plugin function
 
 
 
@@ -188,5 +179,5 @@ Add independent soft delete methods to the mongoose model, the soft delete metho
 | softDeleteMany        | updateMany        |
 | findByIdAndSoftDelete | findByIdAndUpdate |
 
-The function takes the same parameters as the corresponding update method, except that the update options parameter is not passed.
+These functions take the same parameters as the corresponding update methods, except that the update option parameters are automatically replaced with soft delete field updates.  
 

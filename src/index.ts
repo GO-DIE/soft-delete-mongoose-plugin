@@ -19,6 +19,7 @@ import {
   PipelineStage,
 } from 'mongoose';
 import * as semver from 'semver';
+import * as _ from 'lodash';
 
 export interface SoftDeleteModel<
   T,
@@ -91,10 +92,10 @@ const overriddenMethods = [
   'distinct',
   'exists',
   'find',
-  'findById',
+  // 'findById',
   // 'findByIdAndDelete',
   // 'findByIdAndRemove',
-  'findByIdAndUpdate',
+  // 'findByIdAndUpdate',
   'findOne',
   // 'findOneAndDelete',
   // 'findOneAndRemove',
@@ -115,24 +116,30 @@ type OverriddenMethod = typeof overriddenMethods[number];
 type OverrideOptions = Record<OverriddenMethod, boolean>;
 
 export class SoftDelete {
+  private isDeletedField: string;
+  private deletedAtField: string;
   private mongoDBVersion: string | undefined;
-  private softDeleteField: string;
-  private overrideOptions: OverrideOptions | undefined;
-  private nonDeletedFilterOptions: Record<string, null>;
-  private deleteUpdateOptions: Record<string, Date>;
+  private overrideOptions: OverrideOptions | {};
+  private nonDeletedFilterOptions: Record<string, unknown>;
+  private deleteUpdateOptions: Record<string, unknown>;
   private nonDeletedPipelineMatchOptions: PipelineStage.Match;
 
-  constructor(
-    softDeleteField: string,
-    options: { mongoDBVersion?: string; override?: OverrideOptions } = {},
-  ) {
-    const { mongoDBVersion, override } = options;
+  constructor(options: {
+    isDeletedField: string;
+    deletedAtField: string;
+    mongoDBVersion?: string;
+    override?: OverrideOptions;
+  }) {
+    const { isDeletedField, deletedAtField, mongoDBVersion, override } =
+      options;
+    this.isDeletedField = isDeletedField;
+    this.deletedAtField = deletedAtField;
     this.mongoDBVersion = mongoDBVersion;
-    this.softDeleteField = softDeleteField;
-    this.overrideOptions = override;
-    this.nonDeletedFilterOptions = { [this.softDeleteField]: null };
+    this.overrideOptions = override || {};
+    this.nonDeletedFilterOptions = { [this.isDeletedField]: { $ne: true } };
     this.deleteUpdateOptions = {
-      get [this.softDeleteField]() {
+      [this.isDeletedField]: true,
+      get [this.deletedAtField]() {
         return new Date();
       },
     };
@@ -154,7 +161,7 @@ export class SoftDelete {
   private isIncludeSoftDeleteField(
     filter: FilterQuery<Record<string, any>> | PipelineStage[],
   ) {
-    return JSON.stringify(filter).includes(`"${this.softDeleteField}"`);
+    return JSON.stringify(filter).includes(`"${this.isDeletedField}"`);
   }
 
   getPlugin() {
@@ -166,36 +173,36 @@ export class SoftDelete {
       ) as SoftDeleteMappingKey[];
 
       softDeleteMethods.forEach(softDeleteMethod => {
-        schema.statics[softDeleteMethod] = async function (
-          this,
-          ...args: any[]
-        ) {
-          const softDeleteToUpdateArgs = [
-            Object.assign(args[0] || {}, softDelete.nonDeletedFilterOptions),
+        schema.statics[softDeleteMethod] = function (...args: any[]) {
+          const argsClone = _.cloneDeep(args);
+          const overriddenArgs = [
+            Object.assign(
+              softDeleteMethod === 'findByIdAndSoftDelete'
+                ? { _id: argsClone[0] }
+                : argsClone[0] || {},
+              softDelete.nonDeletedFilterOptions,
+            ),
             { $set: softDelete.deleteUpdateOptions },
-            ...args.slice(1, args.length),
+            ...argsClone.slice(1),
           ];
 
-          return (this[softDeleteMapping[softDeleteMethod]] as Function)(
-            ...softDeleteToUpdateArgs,
+          return Model[softDeleteMapping[softDeleteMethod]].apply(
+            this,
+            overriddenArgs,
           );
         };
       });
 
       overriddenMethods.forEach(overriddenMethod => {
-        if (
-          softDelete.overrideOptions &&
-          !softDelete.overrideOptions[overriddenMethod]
-        ) {
+        if (softDelete.overrideOptions[overriddenMethod] === false) {
           return;
         }
 
-        schema.statics[overriddenMethod] = async function (
-          this,
-          ...args: any[]
-        ) {
+        schema.statics[overriddenMethod] = function (...args: any[]) {
+          const argsClone = _.cloneDeep(args);
+          let overriddenArgs;
           if (overriddenMethod === 'aggregate') {
-            const pipelineStages: PipelineStage[] = args[0] || [];
+            const pipelineStages: PipelineStage[] = argsClone[0] || [];
             if (!softDelete.isIncludeSoftDeleteField(pipelineStages)) {
               pipelineStages.unshift(softDelete.nonDeletedPipelineMatchOptions);
             }
@@ -212,6 +219,7 @@ export class SoftDelete {
                     semver.gt(softDelete.mongoDBVersion, '5.0.0')
                   ) {
                     stage.$lookup.pipeline = [
+                      ...(stage.$lookup.pipeline || []),
                       softDelete.nonDeletedPipelineMatchOptions,
                     ];
                   } else {
@@ -243,37 +251,39 @@ export class SoftDelete {
                 );
               }
             });
+            overriddenArgs = [pipelineStages, ...argsClone.slice(1)];
           } else if (overriddenMethod === 'bulkWrite') {
-            const writes = args[0];
+            const writes = argsClone[0];
             writes.forEach((write: Record<string, any>) => {
               const [operation] = Object.keys(write);
               if (
                 ['updateOne', 'updateMany', 'replaceOne'].includes(operation)
               ) {
-                const filter = write.filter || {};
-                if (softDelete.isIncludeSoftDeleteField(filter)) {
-                  Object.assign(filter, softDelete.nonDeletedFilterOptions);
+                const operationWrite = write[operation];
+                const filter = operationWrite.filter || {};
+                if (!softDelete.isIncludeSoftDeleteField(filter)) {
+                  operationWrite.filter = Object.assign(
+                    filter,
+                    softDelete.nonDeletedFilterOptions,
+                  );
                 }
               }
             });
+            overriddenArgs = [writes, ...argsClone.slice(1)];
           } else if (overriddenMethod === 'distinct') {
             const filter = args[1] || {};
             if (!softDelete.isIncludeSoftDeleteField(filter)) {
-              args[1] = Object.assign(
-                filter,
-                softDelete.nonDeletedFilterOptions,
-              );
+              Object.assign(filter, softDelete.nonDeletedFilterOptions);
             }
+            overriddenArgs = [argsClone[0], filter, ...argsClone.slice(2)];
           } else {
             const filter = args[0] || {};
             if (!softDelete.isIncludeSoftDeleteField(filter)) {
-              args[0] = Object.assign(
-                filter,
-                softDelete.nonDeletedFilterOptions,
-              );
+              Object.assign(filter, softDelete.nonDeletedFilterOptions);
             }
+            overriddenArgs = [filter, ...argsClone.slice(1)];
           }
-          return Model[overriddenMethod].apply(this, args);
+          return Model[overriddenMethod].apply(this, overriddenArgs);
         };
       });
     };

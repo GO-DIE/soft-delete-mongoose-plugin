@@ -134,7 +134,7 @@ main();
 
 - *options* **\<Object\>**
 
-    *isDeletedField* **\<string\>**  Soft delete flag field name，field type: **boolean**
+    *isDeletedField* **\<string\>**  Soft delete flag field name, field type: **boolean**
 
     *deletedAtField* **\<string\>**  Soft delete date field name, field type: **Date | null**
 

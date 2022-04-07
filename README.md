@@ -134,9 +134,9 @@ main();
 
 - *options* **\<Object\>**
 
-    *isDeletedField* **\<string\>**  Soft delete flag field name
+    *isDeletedField* **\<string\>**  Soft delete flag field name，field type: **boolean**
 
-    *deletedAtField* **\<string\>**  Soft delete date field name
+    *deletedAtField* **\<string\>**  Soft delete date field name, field type: **Date | null**
 
     *mongoDBVersion*? **\<string\>**  Rewrite with better query statements based on the mongoDB version used, default the last MongoDB version
 
